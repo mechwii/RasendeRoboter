@@ -259,7 +259,7 @@ class MenuWindow:
             ai_options = [
                 ("Recherche en largeur", "BFS"),
                 ("Best-First Search", "BestFirst"),
-                ("A*", "AStar"),
+                ("A*", "A*"),
                 ("Djikstra", "Djikstra")
             ]
 

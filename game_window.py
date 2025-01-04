@@ -25,6 +25,20 @@ class GameWindow:
             "Gr": (0, 255, 0),  # Green
             "Ye": (255, 255, 0)  # Yellow
         }
+        self.robot_images = {
+            "Re": pygame.image.load("img/r_r.png"),  # Robot rouge
+            "Bl": pygame.image.load("img/r_b.png"),  # Robot bleu
+            "Gr": pygame.image.load("img/r_v.png"),  # Robot vert
+            "Ye": pygame.image.load("img/r_j.png"),  # Robot jaune
+        }
+
+        # Charger les images des cibles
+        self.target_images = {
+            "Re": pygame.image.load("img/o_r.png"),  # Cible rouge
+            "Bl": pygame.image.load("img/o_b.png"),  # Cible bleue
+            "Gr": pygame.image.load("img/o_v.png"),  # Cible verte
+            "Ye": pygame.image.load("img/o_j.png"),  # Cible jaune
+        }
 
     def get_target_color(self, color):
         if color == "Re" :
@@ -98,6 +112,7 @@ class GameWindow:
             self.render_text(direction.capitalize(), (center_x - 10, center_y + 20),
                              color=self.robot_colors.get(robot_color, self.BLACK), font_size=16)
 
+    """"
     def draw_target(self,target):
         position= target['position']
         y,x = position
@@ -122,6 +137,8 @@ class GameWindow:
         # Blit the surface onto the main screen
         self.screen.blit(surface, (rect_y, rect_x))
 
+    """
+    """
     def draw_robot(self,board,player):
         for robot in board.robots:
             # Get robot color and position
@@ -136,6 +153,38 @@ class GameWindow:
             pygame.draw.circle(self.screen, color, (center_y, center_x), self.cell_size // 3)
 
             self.render_moves_history(player)
+    """
+
+    def draw_target(self, target):
+        position = target['position']
+        y, x = position
+        target_image = self.target_images.get(target['color'])
+        if target_image:
+            # Redimensionner l'image pour s'adapter à la taille de la cellule
+            scaled_image = pygame.transform.scale(target_image, (self.cell_size, self.cell_size))
+
+            rect_y = self.margin_y + x * self.cell_size
+            rect_x = self.margin_x + y * self.cell_size
+
+            # Dessiner l'image de la cible
+            self.screen.blit(scaled_image, (rect_y, rect_x))
+
+    def draw_robot(self, board, player):
+        for robot in board.robots:
+            # Récupérer la couleur et la position du robot
+            robot_image = self.robot_images.get(robot["color"])
+            if robot_image:
+                # Redimensionner l'image pour s'adapter à la taille de la cellule
+                scaled_image = pygame.transform.scale(robot_image, (self.cell_size, self.cell_size))
+
+                robot_y, robot_x = robot["position"]
+                rect_x = self.margin_x + robot_y * self.cell_size
+                rect_y = self.margin_y + robot_x * self.cell_size
+
+                # Dessiner l'image du robot
+                self.screen.blit(scaled_image, (rect_y, rect_x))
+
+        self.render_moves_history(player)
 
     def update_display(self, board, player):
         """

@@ -51,7 +51,7 @@ def main():
                     players = [HumanPlayer("Player 1"), BFSPlayer(ai_type)]
                 elif ai_type == "BestFirst":
                     players = [HumanPlayer("Player 1"), BestFirstSearchPlayer(ai_type)]
-                elif ai_type == "AStar":
+                elif ai_type == "A*":
                     players = [HumanPlayer("Player 1"), AStartPlayer(ai_type)]
                 elif ai_type == "Djikstra":
                     players = [HumanPlayer("Player 1"), DijkstraPlayer(ai_type)]
@@ -66,7 +66,7 @@ def main():
                     player1 = BFSPlayer(ai_type_1 + " 1")
                 elif ai_type_1 == "BestFirst":
                     player1 = BestFirstSearchPlayer(ai_type_1 + " 1")
-                elif ai_type_1 == "AStar":
+                elif ai_type_1 == "A*":
                     player1 = AStartPlayer(ai_type_1 + " 1")
                 elif ai_type_1 == "Djikstra":
                     player1 = DijkstraPlayer(ai_type_1 + " 1")
@@ -75,7 +75,7 @@ def main():
                     player2 = BFSPlayer(ai_type_2 + " 2")
                 elif ai_type_2 == "BestFirst":
                     player2 = BestFirstSearchPlayer(ai_type_2 + " 2")
-                elif ai_type_2 == "AStar":
+                elif ai_type_2 == "A*":
                     player2 = AStartPlayer(ai_type_2 + " 2")
                 elif ai_type_2 == "Djikstra":
                     player2 = DijkstraPlayer(ai_type_2 + " 2")
