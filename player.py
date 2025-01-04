@@ -127,18 +127,16 @@ class BFSPlayer(Player):
         queue = collections.deque([(start_state, [])])  # (state, path)
         visited = set()
 
+        # Pré-calcul des états pour éviter des calculs inutiles
+        start_state_tuple = self._state_to_tuple(start_state)
+        visited.add(start_state_tuple)
+
         while queue:
             yield "CALCULATING"  # Indique que le calcul est en cours
 
             # Déqueue un état
-            (current_state, path) = queue.popleft()
+            current_state, path = queue.popleft()
             robots, target = current_state
-
-            # Marquer comme visité
-            current_state_tuple = self._state_to_tuple(current_state)
-            if current_state_tuple in visited:
-                continue
-            visited.add(current_state_tuple)
 
             # Vérifie si la cible est atteinte
             for robot in robots:
@@ -161,10 +159,11 @@ class BFSPlayer(Player):
                             for r in robots
                         ]
                         new_state = (new_robots, target)
+                        new_state_tuple = self._state_to_tuple(new_state)
 
                         # Vérifier si l'état a déjà été visité
-                        new_state_tuple = self._state_to_tuple(new_state)
                         if new_state_tuple not in visited:
+                            visited.add(new_state_tuple)
                             queue.append((new_state, path + [(robot["color"], direction, new_position)]))
 
         print("Aucune solution trouvée.")
@@ -175,8 +174,8 @@ class BFSPlayer(Player):
         Convertir un état en une représentation tuple pour Visited.
         """
         robots, target = state
-        robots_tuple = tuple((r["position"], r["color"]) for r in robots)
-        target_tuple = (target["position"], target["color"])
+        robots_tuple = tuple((tuple(r["position"]), r["color"]) for r in robots)
+        target_tuple = (tuple(target["position"]), target["color"])
         return robots_tuple + target_tuple
 
 
@@ -249,95 +248,6 @@ class AStartPlayer(Player):
         robots = [{"position": pos, "color": color} for pos, color in robots_tuple]
         target = {"position": target_tuple[0], "color": target_tuple[1]}
         return robots, target
-
-
-class BestFirstSearchPlayer(Player):
-    def __init__(self, name):
-        super().__init__(name)
-
-    def play(self):
-        # Initialisation de Open
-        start_state = (self.board.robots, self.board.get_current_target())
-        open_list = []  # File de priorité basée sur l'heuristique
-        heapq.heappush(open_list, (self.heuristic(start_state[0], start_state[1]), self._state_to_tuple(start_state), []))
-        visited = set()
-
-        while open_list:
-            yield "CALCULATING"  # Indique que le calcul est en cours
-
-            # Extraire le nœud avec l'heuristique minimale
-            _, current_state_tuple, path = heapq.heappop(open_list)
-            current_state = self._tuple_to_state(current_state_tuple)
-            robots, target = current_state
-
-            # Vérifie si la cible est atteinte
-            for robot in robots:
-                if robot["position"] == target["position"] and robot["color"] == target["color"]:
-                    print("Solution trouvée avec les mouvements :", path)
-                    for move in path:
-                        print(f"Déplacement : Robot {move[0]} vers {move[1]} jusqu'à {move[2]}")
-                    self.moves = path
-                    yield "SOLVED"  # Solution trouvée
-                    return
-
-            # Marquer l'état comme visité
-            visited.add(current_state_tuple)
-
-            # Générer les mouvements possibles pour chaque robot
-            for robot in robots:
-                possible_moves = self.board.getPossibleMovesOfRobot(robot["position"], robots)
-                for direction, new_position in possible_moves.items():
-                    if new_position:
-                        # Créer un nouvel état
-                        new_robots = copy.deepcopy(robots)
-                        for r in new_robots:
-                            if r["color"] == robot["color"]:
-                                r["position"] = new_position
-
-                        new_state = (new_robots, target)
-                        new_state_tuple = self._state_to_tuple(new_state)
-
-                        if new_state_tuple not in visited:
-                            # Ajouter à la file avec l'heuristique
-                            heapq.heappush(open_list, (
-                                self.heuristic(new_robots, target),
-                                new_state_tuple,
-                                path + [(robot["color"], direction, new_position)]
-                            ))
-
-        print("Aucune solution trouvée.")
-        yield "NO_SOLUTION"  # Si aucune solution n'est trouvée
-
-    def heuristic(self, robots, target):
-        """
-        Calcule l'heuristique basée sur la distance de Manhattan entre le robot cible et la cible.
-        """
-        for robot in robots:
-            if robot["color"] == target["color"]:
-                ry, rx = robot["position"]
-                ty, tx = target["position"]
-                return abs(ry - ty) + abs(rx - tx)
-        return float("inf")
-
-    def _state_to_tuple(self, state):
-        """
-        Convertir un état en une représentation tuple pour Open et Visited.
-        """
-        robots, target = state
-        robots_tuple = tuple((r["position"], r["color"]) for r in robots)
-        target_tuple = (target["position"], target["color"])
-        return robots_tuple + target_tuple
-
-    def _tuple_to_state(self, state_tuple):
-        """
-        Convertir un tuple en un état structuré.
-        """
-        robots_tuple = state_tuple[:-2]
-        target_tuple = state_tuple[-2:]
-        robots = [{"position": pos, "color": color} for pos, color in robots_tuple]
-        target = {"position": target_tuple[0], "color": target_tuple[1]}
-        return robots, target
-
 
 class DijkstraPlayer(Player):
     def __init__(self, name):

@@ -1,7 +1,7 @@
 from game_window import GameWindow
 from board import Board
 from configurations import configurations
-from player import HumanPlayer, AStartPlayer, BFSPlayer, BestFirstSearchPlayer, DijkstraPlayer
+from player import HumanPlayer, AStartPlayer, BFSPlayer, DijkstraPlayer
 from menu_window import MenuWindow
 import pygame
 import time
@@ -49,8 +49,6 @@ def main():
                 ai_type = menu.select_ai("Choisissez l'IA pour le mode Humain vs IA")
                 if ai_type == "BFS":
                     players = [HumanPlayer("Player 1"), BFSPlayer(ai_type)]
-                elif ai_type == "BestFirst":
-                    players = [HumanPlayer("Player 1"), BestFirstSearchPlayer(ai_type)]
                 elif ai_type == "A*":
                     players = [HumanPlayer("Player 1"), AStartPlayer(ai_type)]
                 elif ai_type == "Djikstra":
@@ -64,8 +62,6 @@ def main():
 
                 if ai_type_1 == "BFS":
                     player1 = BFSPlayer(ai_type_1 + " 1")
-                elif ai_type_1 == "BestFirst":
-                    player1 = BestFirstSearchPlayer(ai_type_1 + " 1")
                 elif ai_type_1 == "A*":
                     player1 = AStartPlayer(ai_type_1 + " 1")
                 elif ai_type_1 == "Djikstra":
@@ -73,13 +69,10 @@ def main():
 
                 if ai_type_2 == "BFS":
                     player2 = BFSPlayer(ai_type_2 + " 2")
-                elif ai_type_2 == "BestFirst":
-                    player2 = BestFirstSearchPlayer(ai_type_2 + " 2")
                 elif ai_type_2 == "A*":
                     player2 = AStartPlayer(ai_type_2 + " 2")
                 elif ai_type_2 == "Djikstra":
                     player2 = DijkstraPlayer(ai_type_2 + " 2")
-
 
                 players = [player1, player2]
                 state = "TARGET_SELECTION"  # Move to target selection only after both AIs are selected
@@ -119,13 +112,17 @@ def main():
         else:
             # Handle AI Player
             if not ai_generator:
+                start_time = time.time()  # Start timing when AI begins calculation
                 ai_generator = current_player.play()  # Initialize BFS generator
             try:
                 ai_result = next(ai_generator)
                 if ai_result == "CALCULATING":
                     print("Calculating : ")
                 if ai_result == "SOLVED":
-                    print("SOLVED")
+                    end_time = time.time()  # End timing when AI finishes
+                    elapsed_time = end_time - start_time
+                    print(f"AI solved the problem in {elapsed_time:.2f} seconds.")
+
                     ai_generator = None  # Reset generator after solving
                     for move in current_player.moves:
                         time.sleep(3)
@@ -152,7 +149,7 @@ def main():
             current_player_index = (current_player_index + 1) % len(players)
 
             winner = players[ex_index] if len(players[ex_index].moves) <= len(players[current_player_index].moves) else \
-            players[current_player_index]
+                players[current_player_index]
 
             if players[ex_index].turn == players[current_player_index].turn:
                 # Advance to the next target
@@ -174,11 +171,9 @@ def main():
                 for p in players:
                     p.board.setNewConfig(winner_configuration)
 
-
                 game_window.update_display(board, players[current_player_index])
             else:
                 board.resetToInitialConfig()
-
 
         # Update the display
         game_window.update_display(board, current_player)
