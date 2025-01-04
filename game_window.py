@@ -84,7 +84,7 @@ class GameWindow:
 
         # Define spacing for the moves
         spacing_x = 50  # Horizontal space between each move
-        start_x = 20  # Starting x-coordinate for the first move
+        start_x = 16 * self.cell_size + self.margin_x  # Starting x-coordinate for the first move
 
         for i, move in enumerate(moves_to_display):
             robot_color, direction, _ = move
@@ -144,6 +144,7 @@ class GameWindow:
         self.screen.fill(self.WHITE)
         self.render_text(f"{player.name}: {len(player.moves)} moves         Score: {player.score}", (10, 10))
 
+
         for y in range(board.BOARD_SIZE):  # Rows
 
             for x in range(board.BOARD_SIZE):  # Columns
@@ -176,110 +177,115 @@ class GameWindow:
                 # Draw middle cells
                 if cell["type"] == "M":
                     pygame.draw.rect(self.screen, self.BLACK, rect)
+
         self.draw_target(board.get_current_target() )
         self.draw_robot(board,player)
+        self.render_text("Reset", (16 * self.cell_size / 2  + self.margin_x - 45, 16 * self.cell_size / 2 + self.margin_y + 20), color=self.WHITE)
 
         pygame.display.flip()  # Update the display
 
-    def show_menu(screen, width, height):
+    def show_popup(self, winner_name, num_moves):
         """
-        Displays the main menu where users can select options.
+        Displays a modern popup message announcing the winner of the turn.
+        :param winner_name: Name of the winning player.
+        :param num_moves: Number of moves the winner used.
         """
-        font = pygame.font.Font(None, 48)
-        screen.fill((255, 255, 255))
+        popup_width, popup_height = 400, 250
+        popup_x = (self.screen.get_width() - popup_width) // 2
+        popup_y = (self.screen.get_height() - popup_height) // 2
 
-        title = font.render("Rasende Roboter", True, (0, 0, 0))
-        start_game = font.render("1. Launch Game", True, (0, 0, 0))
-        show_rules = font.render("2. Rules", True, (0, 0, 0))
+        # Popup rectangle
+        popup_rect = pygame.Rect(popup_x, popup_y, popup_width, popup_height)
 
-        screen.blit(title, (width // 2 - title.get_width() // 2, height // 4))
-        screen.blit(start_game, (width // 2 - start_game.get_width() // 2, height // 2))
-        screen.blit(show_rules, (width // 2 - show_rules.get_width() // 2, height // 2 + 50))
+        # Background with rounded corners
+        pygame.draw.rect(self.screen, (50, 50, 50), popup_rect, border_radius=20)  # Dark gray background
+        pygame.draw.rect(self.screen, (0, 128, 255), popup_rect.inflate(-8, -8), 2, border_radius=20)  # Blue border
 
-        pygame.display.flip()
-        return "MENU"
+        # Add a line separator
+        line_y = popup_y + popup_height // 2
+        pygame.draw.line(self.screen, (200, 200, 200), (popup_x + 20, line_y), (popup_x + popup_width - 20, line_y), 2)
 
-    def show_rules(screen, width, height):
-        """
-        Displays the rules of the game.
-        """
-        font = pygame.font.Font(None, 36)
-        screen.fill((255, 255, 255))
+        # Title text
+        font_title = pygame.font.Font(None, 48)
+        title_text = font_title.render(" Tour Gagné ! ", True, (255, 255, 255))
+        title_rect = title_text.get_rect(center=(popup_x + popup_width // 2, popup_y + 50))
+        self.screen.blit(title_text, title_rect.topleft)
 
-        rules = [
-            "Rules:",
-            "1. Select a robot to move.",
-            "2. Navigate the robot to its target.",
-            "3. The first player to solve a target wins.",
-            "4. Game ends when all targets are solved.",
-            "",
-            "Press any key to return to the menu."
-        ]
+        # Winner's name and number of moves
+        font_body = pygame.font.Font(None, 36)
+        winner_text = font_body.render(f"Joueur : {winner_name}", True, (255, 255, 255))
+        moves_text = font_body.render(f"Nombre de coups : {num_moves}", True, (255, 255, 255))
 
-        y_offset = height // 4
-        for line in rules:
-            text = font.render(line, True, (0, 0, 0))
-            screen.blit(text, (width // 2 - text.get_width() // 2, y_offset))
-            y_offset += 40
+        winner_rect = winner_text.get_rect(center=(popup_x + popup_width // 2, line_y + 30))
+        moves_rect = moves_text.get_rect(center=(popup_x + popup_width // 2, line_y + 80))
 
-        pygame.display.flip()
-        return "RULES"
+        self.screen.blit(winner_text, winner_rect.topleft)
+        self.screen.blit(moves_text, moves_rect.topleft)
 
-    def select_game_mode(screen, width, height):
-        """
-        Displays the game mode selection screen.
-        """
-        font = pygame.font.Font(None, 36)
-        screen.fill((255, 255, 255))
-
-        modes = [
-            "Select Game Mode:",
-            "1. Human vs Human",
-            "2. Human vs AI",
-            "3. AI vs AI"
-        ]
-
-        y_offset = height // 4
-        for line in modes:
-            text = font.render(line, True, (0, 0, 0))
-            screen.blit(text, (width // 2 - text.get_width() // 2, y_offset))
-            y_offset += 50
-
-        pygame.display.flip()
-        return "GAME_MODE"
-
-    def select_target_number(screen, width, height, max_targets):
-        """
-        Displays a target selection screen.
-        """
-        font = pygame.font.Font(None, 36)
-        screen.fill((255, 255, 255))
-
-        prompt = f"Enter the number of targets (1-{max_targets}):"
-        text = font.render(prompt, True, (0, 0, 0))
-        screen.blit(text, (width // 2 - text.get_width() // 2, height // 2))
+        # Display everything
         pygame.display.flip()
 
-        input_number = ""
+        # Wait for a short duration
+        pygame.time.wait(3000)  # 3 seconds
+
+    def show_end_screen(self, players):
+        """
+        Displays the end screen showing the players' scores in descending order with modern aesthetics.
+        :param players: List of player objects with their scores.
+        """
+        # Sort players by score in descending order
+        sorted_players = sorted(players, key=lambda p: p.score, reverse=True)
+
         running = True
+
         while running:
+            self.screen.fill((20, 20, 20))  # Dark background
+
+            # Title
+            font_title = pygame.font.Font(None, 70)
+            title_text = font_title.render(" Fin du Jeu ! ", True, (255, 255, 255))
+            title_rect = title_text.get_rect(center=(self.screen.get_width() // 2, 100))
+            self.screen.blit(title_text, title_rect.topleft)
+
+            # List of players and their scores
+            font_body = pygame.font.Font(None, 50)
+            start_y = 200
+            line_spacing = 60
+
+            for i, player in enumerate(sorted_players):
+                text = font_body.render(f"{i + 1}. {player.name} : {player.score} points", True, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.screen.get_width() // 2, start_y + i * line_spacing))
+                self.screen.blit(text, text_rect.topleft)
+
+            # Quit button
+            button_width, button_height = 250, 70
+            button_x = (self.screen.get_width() - button_width) // 2
+            button_y = start_y + len(sorted_players) * line_spacing + 50
+
+            quit_button = pygame.Rect(button_x, button_y, button_width, button_height)
+
+            # Mouse hover effect
+            mouse_pos = pygame.mouse.get_pos()
+            is_hovered = quit_button.collidepoint(mouse_pos)
+            button_color = (0, 150, 255) if is_hovered else (0, 128, 255)
+
+            pygame.draw.rect(self.screen, button_color, quit_button, border_radius=15)  # Blue button
+            pygame.draw.rect(self.screen, (255, 255, 255), quit_button, 3, border_radius=15)  # White border
+
+            # Quit button text
+            quit_text = font_body.render("Quitter", True, (255, 255, 255))
+            quit_text_rect = quit_text.get_rect(center=quit_button.center)
+            self.screen.blit(quit_text, quit_text_rect.topleft)
+
+            pygame.display.flip()
+
+            # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN and input_number.isdigit():
-                        target_count = int(input_number)
-                        if 1 <= target_count <= max_targets:
-                            return target_count
-                    elif event.key == pygame.K_BACKSPACE:
-                        input_number = input_number[:-1]
-                    else:
-                        input_number += event.unicode
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse click
+                    if quit_button.collidepoint(event.pos):
+                        pygame.quit()
+                        exit()
 
-            # Update display with user input
-            screen.fill((255, 255, 255))
-            screen.blit(text, (width // 2 - text.get_width() // 2, height // 2))
-            input_display = font.render(input_number, True, (0, 0, 0))
-            screen.blit(input_display, (width // 2 - input_display.get_width() // 2, height // 2 + 50))
-            pygame.display.flip()

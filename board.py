@@ -173,6 +173,10 @@ class Board:
     def resetToInitialConfig(self):
         self.robots = copy.deepcopy(self.initial_config_robot)
 
+    def setNewConfig(self, robots):
+        self.initial_config_robot = robots
+        self.resetToInitialConfig()
+
     """"
     def getPossibleMovesOfRobot(self, coord):
         # Maybe do multithreading

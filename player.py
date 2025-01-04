@@ -1,4 +1,6 @@
 import copy
+import random
+
 import pygame
 import heapq
 import collections
@@ -336,3 +338,87 @@ class BestFirstSearchPlayer(Player):
         target = {"position": target_tuple[0], "color": target_tuple[1]}
         return robots, target
 
+
+class DijkstraPlayer(Player):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def _state_to_tuple(self, state):
+        """
+        Converts the state into a hashable tuple for visited state tracking.
+        A state includes the positions of all robots and the current target.
+
+        Args:
+            state (tuple): The state as (robots, target).
+
+        Returns:
+            tuple: A unique representation of the state.
+        """
+        robots, target = state
+        # Convert robot positions and colors to a tuple
+        robots_tuple = tuple(sorted((robot["position"], robot["color"]) for robot in robots))
+        target_tuple = (target["position"], target["color"])
+        return robots_tuple + target_tuple
+
+    def _tuple_to_state(self, state_tuple):
+        """
+        Converts a tuple representation back into a state with robots and target.
+
+        Args:
+            state_tuple (tuple): The tuple representation of the state.
+
+        Returns:
+            tuple: A state as (robots, target).
+        """
+        robots_tuple = state_tuple[:-2]
+        target_tuple = state_tuple[-2:]
+
+        robots = [{"position": pos, "color": color} for pos, color in robots_tuple]
+        target = {"position": target_tuple[0], "color": target_tuple[1]}
+
+        return robots, target
+
+    def play(self):
+        start_state = (self.board.robots, self.board.get_current_target())
+        start_tuple = self._state_to_tuple(start_state)
+
+        open_list = []  # Min-heap for states
+        heapq.heappush(open_list, (0, start_tuple, []))  # (cost, state_tuple, path)
+        visited = set()
+
+        while open_list:
+            cost, current_tuple, path = heapq.heappop(open_list)
+
+            # Check if the current state has already been visited
+            if current_tuple in visited:
+                continue
+            visited.add(current_tuple)
+
+            # Convert the tuple back to a state
+            current_state = self._tuple_to_state(current_tuple)
+            robots, target = current_state
+
+            # Check if the target is reached
+            for robot in robots:
+                if robot["color"] == target["color"] and robot["position"] == target["position"]:
+                    self.moves = path
+                    yield "SOLVED"
+                    return
+
+            # Generate possible moves for each robot
+            for i, robot in enumerate(robots):
+                possible_moves = self.board.getPossibleMovesOfRobot(robot["position"], robots)
+                for direction, new_position in possible_moves.items():
+                    if new_position:
+                        # Create a new state
+                        new_robots = copy.deepcopy(robots)
+                        new_robots[i]["position"] = new_position
+                        new_state = (new_robots, target)
+                        new_tuple = self._state_to_tuple(new_state)
+
+                        # Add the new state to the priority queue
+                        heapq.heappush(open_list, (cost + 1, new_tuple, path + [(robot["color"], direction, new_position)]))
+
+            yield "CALCULATING"
+
+        yield "NO_SOLUTION"

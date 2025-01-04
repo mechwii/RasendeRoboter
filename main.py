@@ -1,7 +1,7 @@
 from game_window import GameWindow
 from board import Board
 from configurations import configurations
-from player import HumanPlayer, AStartPlayer, BFSPlayer, BestFirstSearchPlayer
+from player import HumanPlayer, AStartPlayer, BFSPlayer, BestFirstSearchPlayer, DijkstraPlayer
 from menu_window import MenuWindow
 import pygame
 import time
@@ -10,7 +10,7 @@ import time
 BOARD_SIZE = 16
 CELL_SIZE = 40
 WIDTH = 1200
-HEIGHT = 800
+HEIGHT = 776
 MARGIN_X = (WIDTH - BOARD_SIZE * CELL_SIZE) // 6
 MARGIN_Y = (HEIGHT - BOARD_SIZE * CELL_SIZE) // 2
 
@@ -18,36 +18,80 @@ MARGIN_Y = (HEIGHT - BOARD_SIZE * CELL_SIZE) // 2
 def main():
     pygame.init()
 
+    index = 2
+
     # Initialize MenuWindow
     menu = MenuWindow(WIDTH, HEIGHT)
     state = menu.show_menu()
+    game_mode = ""
+    players = []  # Initialize players to avoid reference errors later
 
-    # Handle menu navigation
     while state != "GAME":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            elif event.type == pygame.KEYDOWN:
-                if state == "MENU":
-                    if event.key == pygame.K_1:  # Launch Game
-                        state = menu.select_game_mode()
-                elif state == "RULES":
-                    state = menu.show_menu()
-                elif state == "GAME_MODE":
-                    if event.key == pygame.K_1:  # Human vs Human
-                        players = [HumanPlayer("Player 1"), BidirectionalSearchPlayer("Player 2")]
-                        state = "TARGET_SELECTION"
-                    elif event.key in [pygame.K_2, pygame.K_3]:
-                        print("AI functionality not yet implemented.")
-                        state = menu.show_menu()
-                elif state == "TARGET_SELECTION":
-                    max_targets = len(configurations[0]["targets"])
-                    num_targets = menu.select_target_number(max_targets)
-                    state = "GAME"
+
+        if state == "GAME":
+            break
+
+        elif state == "GAME_MODE":
+            # Select the game mode
+            game_mode = menu.select_game_mode_with_graphics()
+
+            if game_mode == "HUMAN_VS_HUMAN":
+                # Set up human players
+                players = [HumanPlayer("Player 1"), HumanPlayer("Player 2")]
+                state = "TARGET_SELECTION"  # Move to target selection only after setting players
+
+            elif game_mode == "HUMAN_VS_AI":
+                # Select an AI type for the second player
+                ai_type = menu.select_ai("Choisissez l'IA pour le mode Humain vs IA")
+                if ai_type == "BFS":
+                    players = [HumanPlayer("Player 1"), BFSPlayer(ai_type)]
+                elif ai_type == "BestFirst":
+                    players = [HumanPlayer("Player 1"), BestFirstSearchPlayer(ai_type)]
+                elif ai_type == "AStar":
+                    players = [HumanPlayer("Player 1"), AStartPlayer(ai_type)]
+                elif ai_type == "Djikstra":
+                    players = [HumanPlayer("Player 1"), DijkstraPlayer(ai_type)]
+                state = "TARGET_SELECTION"  # Move to target selection only after AI is selected
+
+            elif game_mode == "AI_VS_AI":
+                # Select AI types for both players
+                ai_type_1 = menu.select_ai("Choisissez la première IA pour le mode IA vs IA")
+                ai_type_2 = menu.select_ai("Choisissez la deuxième IA pour le mode IA vs IA")
+
+                if ai_type_1 == "BFS":
+                    player1 = BFSPlayer(ai_type_1 + " 1")
+                elif ai_type_1 == "BestFirst":
+                    player1 = BestFirstSearchPlayer(ai_type_1 + " 1")
+                elif ai_type_1 == "AStar":
+                    player1 = AStartPlayer(ai_type_1 + " 1")
+                elif ai_type_1 == "Djikstra":
+                    player1 = DijkstraPlayer(ai_type_1 + " 1")
+
+                if ai_type_2 == "BFS":
+                    player2 = BFSPlayer(ai_type_2 + " 2")
+                elif ai_type_2 == "BestFirst":
+                    player2 = BestFirstSearchPlayer(ai_type_2 + " 2")
+                elif ai_type_2 == "AStar":
+                    player2 = AStartPlayer(ai_type_2 + " 2")
+                elif ai_type_2 == "Djikstra":
+                    player2 = DijkstraPlayer(ai_type_2 + " 2")
+
+
+                players = [player1, player2]
+                state = "TARGET_SELECTION"  # Move to target selection only after both AIs are selected
+
+        elif state == "TARGET_SELECTION":
+            # Select the number of targets
+            max_targets = len(configurations[index]["targets"])
+            num_targets = menu.select_target_number(max_targets)
+            state = "GAME"  # Once targets are selected, move to the game
 
     # Initialize game components after menu selection
-    board_config = configurations[2]
+    board_config = configurations[index]
     board = Board(board_config, BOARD_SIZE)
     game_window = GameWindow(WIDTH, HEIGHT, CELL_SIZE, MARGIN_Y, MARGIN_X)
 
@@ -55,7 +99,7 @@ def main():
         player.set_board(board)
 
     current_player_index = 0
-    ai_generator = None  # For AI incremental computation
+    ai_generator = None
 
     print(board.get_current_target())
 
@@ -107,25 +151,34 @@ def main():
             ex_index = current_player_index
             current_player_index = (current_player_index + 1) % len(players)
 
+            winner = players[ex_index] if len(players[ex_index].moves) <= len(players[current_player_index].moves) else \
+            players[current_player_index]
+
             if players[ex_index].turn == players[current_player_index].turn:
                 # Advance to the next target
-                if len(players[ex_index].moves) <= len(players[current_player_index].moves):
-                    players[ex_index].score += 1
-                else:
-                    players[current_player_index].score += 1
+                winner.score += 1
+                game_window.show_popup(winner.name, len(winner.moves))
+
                 board.advance_to_next_target()
+
+                # Check if all targets are solved
+                if board.current_target_index >= num_targets:
+                    game_window.show_end_screen(players)
+                    break
+
                 players[ex_index].resetMoves()
                 players[current_player_index].resetMoves()
+
+                winner_configuration = winner.board.getRobotPosition()
+
+                for p in players:
+                    p.board.setNewConfig(winner_configuration)
+
+
                 game_window.update_display(board, players[current_player_index])
             else:
                 board.resetToInitialConfig()
 
-            # Check if all targets are solved
-            if board.current_target_index >= num_targets:
-                print("All targets solved! Game over.")
-                print(current_player.moves)
-                game_window.running = False
-                break
 
         # Update the display
         game_window.update_display(board, current_player)
