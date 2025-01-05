@@ -5,6 +5,7 @@ from player import HumanPlayer, AStartPlayer, BFSPlayer
 from menu_window import MenuWindow
 import pygame
 import time
+import random
 
 # Constante pour l'affichage graphique
 BOARD_SIZE = 16
@@ -15,10 +16,70 @@ MARGIN_X = (WIDTH - BOARD_SIZE * CELL_SIZE) // 6
 MARGIN_Y = (HEIGHT - BOARD_SIZE * CELL_SIZE) // 2
 
 
+def generate_game_board(board_size=16, num_robots=4, num_targets=4):
+    """
+    Génère une configuration pour le plateau avec des murs, robots et objectifs
+    basés sur le modèle original.
+
+    Args:
+        board_size (int): Taille du plateau (par défaut 16x16).
+        num_robots (int): Nombre de robots à placer (par défaut 4).
+        num_targets (int): Nombre de cibles à placer (par défaut 4).
+
+    Returns:
+        dict: Configuration du plateau avec les murs, robots et cibles.
+    """
+    configuration = {"walls": [], "robots": [], "targets": []}
+    colors = ["Re", "Bl", "Gr", "Ye"]
+
+    center = board_size // 2
+
+    # Ajouter des murs dans chaque quart du plateau
+    for quadrant in range(4):
+        start_x = (quadrant % 2) * center
+        start_y = (quadrant // 2) * center
+
+        # Deux murs extérieurs aléatoires
+        for _ in range(2):
+            x = random.randint(start_x, start_x + center - 1)
+            y = random.randint(start_y, start_y + center - 1)
+            orientation = random.choice(["T", "B", "L", "R"])
+            configuration["walls"].append((x, y, orientation))
+
+        # Quatre angles internes
+        for _ in range(4):
+            x = random.randint(start_x, start_x + center - 1)
+            y = random.randint(start_y, start_y + center - 1)
+            configuration["walls"].append((x, y, "T"))
+            configuration["walls"].append((x, y, "L"))
+
+    # Placer les robots de manière aléatoire
+    robot_positions = set()
+    while len(configuration["robots"]) < num_robots:
+        position = (random.randint(0, board_size - 1), random.randint(0, board_size - 1))
+        # On s'assure qu'il est pas au milieu
+        if position not in robot_positions and position not in (7,7) and position not in (7,8) and position not in (8,7) and position not in (8,8) :
+            configuration["robots"].append({"position": position, "color": colors[len(configuration["robots"])]})
+            robot_positions.add(position)
+
+    #  Placer les objectifs dans des coins
+    target_positions = set(robot_positions)  # Éviter les robots
+    while len(configuration["targets"]) < num_targets:
+        position = (random.randint(0, board_size - 1), random.randint(0, board_size - 1))
+        if position not in target_positions:
+            configuration["targets"].append({"position": position, "color": random.choice(colors)})
+            target_positions.add(position)
+
+    return configuration
+
 def main():
     pygame.init()
 
     index = 2 # Index de la configuration choisie (modifiable selon les besoins)
+    configuration = configurations[index]
+
+    # Configuration aléatoire
+    #configuration = generate_game_board(board_size=16, num_robots=4, num_targets=4)
 
     menu = MenuWindow(WIDTH, HEIGHT)
     state = menu.show_menu()
@@ -73,12 +134,12 @@ def main():
 
         elif state == "TARGET_SELECTION":
             # On choisit le nombre de cible
-            max_targets = len(configurations[index]["targets"])
+            max_targets = len(configuration["targets"])
             num_targets = menu.select_target_number(max_targets)
             state = "GAME"
 
     # On initialise le jeu
-    board_config = configurations[index]
+    board_config = configuration
     board = Board(board_config, BOARD_SIZE)
     game_window = GameWindow(WIDTH, HEIGHT, CELL_SIZE, MARGIN_Y, MARGIN_X)
 

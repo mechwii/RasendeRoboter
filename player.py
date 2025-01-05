@@ -336,7 +336,10 @@ class AStartPlayer(Player):
                         if new_state_tuple not in closed:
                             closed.add(new_state_tuple) # Marque l'état comme visité
                             # Calcule le coût total (g + h) -> chaque déplacement vaut le cout de 1
-                            new_cost = cost + 1 + heuristic(new_position, target["position"])
+                            new_cost = cost + 10 + heuristic(new_position, target["position"])
+                            #new_cost = cost + len(path) + heuristic(new_position, target["position"])
+
+                            # mettre len(path au lieu de 10)
 
                             # Ajoute le nouvel état à la file ouverte
                             heapq.heappush(opened, (
