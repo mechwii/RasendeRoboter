@@ -258,8 +258,7 @@ class MenuWindow:
             # Define button labels and AI types
             ai_options = [
                 ("Recherche en largeur", "BFS"),
-                ("Djikstra", "Djikstra"),
-                ("A*", "A*"),
+                ("A*", "A*")
             ]
 
             # Draw buttons

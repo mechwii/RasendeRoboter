@@ -112,48 +112,6 @@ class GameWindow:
             self.render_text(direction.capitalize(), (center_x - 10, center_y + 20),
                              color=self.robot_colors.get(robot_color, self.BLACK), font_size=16)
 
-    """"
-    def draw_target(self,target):
-        position= target['position']
-        y,x = position
-        color = self.get_target_color(target['color'])
-
-        rect_y = self.margin_y + x * self.cell_size
-        rect_x = self.margin_x + y * self.cell_size
-
-        # Create a transparent surface
-        surface = pygame.Surface((self.cell_size, self.cell_size), pygame.SRCALPHA)
-
-        # Define the target as a large triangle
-        triangle_points = [
-            (self.cell_size // 2, 10),  # Top-center point
-            (10, self.cell_size - 10),  # Bottom-left point
-            (self.cell_size - 10, self.cell_size - 10)  # Bottom-right point
-        ]
-
-        # Draw the triangle on the transparent surface
-        pygame.draw.polygon(surface, color, triangle_points)  # Semi-transparent red
-
-        # Blit the surface onto the main screen
-        self.screen.blit(surface, (rect_y, rect_x))
-
-    """
-    """
-    def draw_robot(self,board,player):
-        for robot in board.robots:
-            # Get robot color and position
-            color = self.robot_colors.get(robot["color"], self.BLACK)  # Default to black if color not found
-            robot_y, robot_x = robot["position"]  # Position is (row, column)
-
-            # Calculate robot's screen position
-            center_x = self.margin_x + robot_y * self.cell_size + self.cell_size // 2
-            center_y = self.margin_y + robot_x * self.cell_size + self.cell_size // 2
-
-            # Draw the robot as a circle
-            pygame.draw.circle(self.screen, color, (center_y, center_x), self.cell_size // 3)
-
-            self.render_moves_history(player)
-    """
 
     def draw_target(self, target):
         position = target['position']
